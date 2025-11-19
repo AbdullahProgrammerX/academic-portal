@@ -62,7 +62,7 @@ class RegisterView(generics.CreateAPIView):
                 
                 logger.info(f"User registered: {user.email}")
                 
-                return Response({
+                response = Response({
                     'user': user_serializer.data,
                     'tokens': {
                         'access': str(refresh.access_token),
@@ -70,6 +70,19 @@ class RegisterView(generics.CreateAPIView):
                     },
                     'message': 'Registration successful.'
                 }, status=status.HTTP_201_CREATED)
+                
+                # Set refresh token as HTTP-only cookie
+                response.set_cookie(
+                    key='refresh_token',
+                    value=str(refresh),
+                    httponly=True,
+                    secure=False,  # Set to True in production with HTTPS
+                    samesite='Lax',
+                    max_age=60 * 60 * 24 * 7,  # 7 days
+                    domain=None  # Allow localhost and 127.0.0.1
+                )
+                
+                return response
                 
         except Exception as e:
             logger.error(f"Registration failed: {str(e)}")
@@ -109,9 +122,10 @@ class LoginView(APIView):
             key='refresh_token',
             value=str(refresh),
             httponly=True,
-            secure=settings.DEBUG is False,
+            secure=False,  # Set to True in production with HTTPS
             samesite='Lax',
-            max_age=60 * 60 * 24 * 7
+            max_age=60 * 60 * 24 * 7,  # 7 days
+            domain=None  # Allow localhost and 127.0.0.1
         )
         
         logger.info(f"User logged in: {user.email}")
@@ -138,6 +152,51 @@ class LogoutView(APIView):
             
         except (TokenError, InvalidToken):
             return Response({'error': 'Invalid token.'}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class RefreshTokenView(APIView):
+    """
+    Refresh access token using refresh token from HTTP-only cookie.
+    
+    POST /api/auth/refresh/
+    """
+    permission_classes = [permissions.AllowAny]
+    
+    def post(self, request):
+        # Get refresh token from cookie or request body
+        refresh_token = request.COOKIES.get('refresh_token') or request.data.get('refresh')
+        
+        if not refresh_token:
+            return Response({
+                'error': 'Refresh token not found.'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            refresh = RefreshToken(refresh_token)
+            access_token = str(refresh.access_token)
+            
+            response = Response({
+                'access': access_token
+            }, status=status.HTTP_200_OK)
+            
+            # If rotation is enabled, update the cookie with new refresh token
+            if settings.SIMPLE_JWT.get('ROTATE_REFRESH_TOKENS', False):
+                response.set_cookie(
+                    key='refresh_token',
+                    value=str(refresh),
+                    httponly=True,
+                    secure=False,  # Set to True in production with HTTPS
+                    samesite='Lax',
+                    max_age=60 * 60 * 24 * 7,  # 7 days
+                    domain=None  # Allow localhost and 127.0.0.1
+                )
+            
+            return response
+            
+        except (TokenError, InvalidToken) as e:
+            return Response({
+                'error': 'Invalid or expired refresh token.'
+            }, status=status.HTTP_401_UNAUTHORIZED)
 
 
 class CurrentUserView(generics.RetrieveUpdateAPIView):
@@ -233,3 +292,93 @@ class ORCIDCallbackView(APIView):
         except Exception as e:
             logger.error(f"ORCID callback failed: {str(e)}")
             return Response({'error': 'ORCID authentication failed.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class ProfileView(APIView):
+    """
+    GET /api/profile/ - Get current user's profile
+    PUT /api/profile/ - Update current user's profile
+    
+    Returns profile data with completion percentage.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get(self, request):
+        """
+        Retrieve current user profile with completion percentage.
+        """
+        user = request.user
+        serializer = UserProfileUpdateSerializer(user)
+        
+        # Calculate profile completion percentage
+        completion = self._calculate_completion(user)
+        
+        return Response({
+            'user': serializer.data,
+            'completion_percentage': completion['percentage'],
+            'missing_fields': completion['missing']
+        }, status=status.HTTP_200_OK)
+    
+    @method_decorator(ratelimit(key='user', rate='10/m', method='PUT'))
+    def put(self, request):
+        """
+        Update current user profile.
+        Soft validation: allows partial updates.
+        """
+        user = request.user
+        serializer = UserProfileUpdateSerializer(user, data=request.data, partial=True)
+        
+        if not serializer.is_valid():
+            return Response({'errors': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+        
+        serializer.save()
+        
+        # Recalculate profile completion
+        completion = self._calculate_completion(user)
+        
+        # Update profile_completed flag if 100%
+        if completion['percentage'] == 100 and user.profile:
+            user.profile.profile_completed = True
+            user.profile.save(update_fields=['profile_completed'])
+        
+        logger.info(f"Profile updated: {user.email}, completion={completion['percentage']}%")
+        
+        return Response({
+            'user': serializer.data,
+            'completion_percentage': completion['percentage'],
+            'missing_fields': completion['missing'],
+            'message': 'Profile updated successfully.'
+        }, status=status.HTTP_200_OK)
+    
+    def _calculate_completion(self, user):
+        """
+        Calculate profile completion percentage.
+        
+        Required fields for 100% completion:
+        - full_name
+        - affiliation
+        - bio (at least 50 chars)
+        - country
+        - research_interests (at least 1)
+        - orcid_id
+        """
+        required_fields = {
+            'full_name': bool(user.full_name),
+            'affiliation': bool(user.affiliation),
+            'bio': bool(user.bio and len(user.bio) >= 50),
+            'country': bool(user.profile and user.profile.country),
+            'research_interests': bool(user.profile and user.profile.research_interests and len(user.profile.research_interests) > 0),
+            'orcid_id': bool(user.orcid_id)
+        }
+        
+        completed = sum(required_fields.values())
+        total = len(required_fields)
+        percentage = int((completed / total) * 100)
+        
+        missing = [field for field, is_complete in required_fields.items() if not is_complete]
+        
+        return {
+            'percentage': percentage,
+            'missing': missing
+        }
+

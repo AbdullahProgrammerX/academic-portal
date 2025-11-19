@@ -103,11 +103,8 @@ apiClient.interceptors.response.use(
       processQueue(refreshError, null)
       ;(window as any).__ACCESS_TOKEN__ = null
 
-      // Redirect to login (will be handled by router guard)
-      if (typeof window !== 'undefined') {
-        window.location.href = '/login'
-      }
-
+      // Don't redirect here - let router guard handle it
+      // Just reject the error
       return Promise.reject(refreshError)
     } finally {
       isRefreshing = false

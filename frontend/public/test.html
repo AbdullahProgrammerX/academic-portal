@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Frontend Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .success { color: green; }
+        .error { color: red; }
+        button {
+            background: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #45a049; }
+        #result {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: #f9f9f9;
+        }
+    </style>
+</head>
+<body>
+    <h1>Frontend & Backend Connection Test</h1>
+    
+    <div>
+        <h2>Backend API Tests</h2>
+        <button onclick="testBackendRoot()">Test Backend Root</button>
+        <button onclick="testBackendAuth()">Test Auth Endpoint</button>
+        <button onclick="testBackendAdmin()">Test Admin Panel</button>
+    </div>
+
+    <div id="result"></div>
+
+    <script>
+        const BACKEND_URL = 'http://127.0.0.1:8000';
+        
+        function showResult(title, data, isError = false) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.className = isError ? 'error' : 'success';
+            resultDiv.innerHTML = `
+                <h3>${title}</h3>
+                <pre>${JSON.stringify(data, null, 2)}</pre>
+            `;
+        }
+
+        async function testBackendRoot() {
+            try {
+                const response = await fetch(`${BACKEND_URL}/`);
+                const data = await response.json();
+                showResult('✅ Backend Root Success', data);
+            } catch (error) {
+                showResult('❌ Backend Root Error', { error: error.message }, true);
+            }
+        }
+
+        async function testBackendAuth() {
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/auth/register/`, {
+                    method: 'OPTIONS'
+                });
+                showResult('✅ Auth Endpoint Success', {
+                    status: response.status,
+                    headers: Object.fromEntries(response.headers.entries())
+                });
+            } catch (error) {
+                showResult('❌ Auth Endpoint Error', { error: error.message }, true);
+            }
+        }
+
+        async function testBackendAdmin() {
+            try {
+                const response = await fetch(`${BACKEND_URL}/admin/`);
+                showResult('✅ Admin Panel Success', {
+                    status: response.status,
+                    statusText: response.statusText
+                });
+            } catch (error) {
+                showResult('❌ Admin Panel Error', { error: error.message }, true);
+            }
+        }
+
+        // Auto-test on load
+        window.onload = () => {
+            console.log('Frontend test page loaded');
+            testBackendRoot();
+        };
+    </script>
+</body>
+</html>

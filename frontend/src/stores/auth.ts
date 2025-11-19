@@ -18,6 +18,7 @@ export const useAuthStore = defineStore('auth', () => {
   const accessToken = ref<string | null>(null)
   const loading = ref(false)
   const error = ref<string | null>(null)
+  const initialized = ref(false)
 
   // Sync access token to global window object for axios interceptor
   watch(accessToken, (newToken) => {
@@ -167,12 +168,20 @@ export const useAuthStore = defineStore('auth', () => {
 
   // Initialize: try to fetch current user if we have a stored token
   async function initialize() {
+    if (initialized.value) {
+      return // Already initialized
+    }
+    
+    initialized.value = true // Mark as initialized immediately to prevent multiple calls
+    
     try {
       await fetchCurrentUser()
     } catch (err) {
       // No valid session, user needs to login
+      // This is expected on first visit
       user.value = null
       accessToken.value = null
+      console.log('[Auth] No active session')
     }
   }
 
@@ -182,6 +191,7 @@ export const useAuthStore = defineStore('auth', () => {
     accessToken,
     loading,
     error,
+    initialized,
     
     // Computed
     isAuthenticated,

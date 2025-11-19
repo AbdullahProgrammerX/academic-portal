@@ -21,6 +21,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
             'research_interests',
             'expertise_areas',
             'publications_count',
+            'profile_completed',
             'email_notifications',
             'submission_updates',
             'review_reminders',

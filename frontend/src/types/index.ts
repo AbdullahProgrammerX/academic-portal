@@ -7,6 +7,8 @@ export interface User {
   id: string  // UUID
   email: string
   full_name: string
+  affiliation?: string
+  bio?: string
   orcid_id?: string
   role: 'author' | 'reviewer' | 'editor' | 'admin'
   is_active: boolean
@@ -19,17 +21,25 @@ export interface User {
 }
 
 export interface UserProfile {
-  bio?: string
-  affiliation?: string
+  phone?: string
+  country?: string
   research_interests?: string[]
   expertise_areas?: string[]
   website?: string
-  phone?: string
+  profile_completed?: boolean
   notification_preferences: {
     email_notifications: boolean
     submission_updates: boolean
     review_reminders: boolean
   }
+}
+
+// Profile completion response
+export interface ProfileCompletionResponse {
+  user: User
+  completion_percentage: number
+  missing_fields: string[]
+  message?: string
 }
 
 // Manuscript Types

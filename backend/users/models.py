@@ -365,6 +365,13 @@ class UserProfile(models.Model):
         help_text=_('Display email on public profile')
     )
     
+    # Profile completion tracking
+    profile_completed = models.BooleanField(
+        _('profile completed'),
+        default=False,
+        help_text=_('Whether user has completed their profile')
+    )
+    
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
