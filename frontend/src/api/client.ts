@@ -78,10 +78,13 @@ apiClient.interceptors.response.use(
     isRefreshing = true
 
     try {
-      // Try to refresh token using HTTP-only cookie
+      // Get refresh token from localStorage (fallback for cookie issues)
+      const refreshToken = localStorage.getItem('refresh_token')
+      
+      // Try to refresh token - send refresh token in body if available
       const response = await axios.post(
         `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api'}/auth/refresh/`,
-        {},
+        refreshToken ? { refresh: refreshToken } : {},
         { withCredentials: true }
       )
 
@@ -101,6 +104,7 @@ apiClient.interceptors.response.use(
       // Refresh failed, clear auth state
       processQueue(refreshError, null)
       localStorage.removeItem('access_token')
+      localStorage.removeItem('refresh_token')
       ;(window as any).__ACCESS_TOKEN__ = null
 
       // Don't redirect here - let router guard handle it

@@ -58,6 +58,15 @@ class SubmissionViewSet(viewsets.ModelViewSet):
         
         Start new submission with DOCX file upload and metadata extraction
         """
+        # Debug logging
+        import sys
+        print("="*80, file=sys.stderr)
+        print(f"[START] Request user: {request.user}", file=sys.stderr)
+        print(f"[START] Request FILES: {request.FILES.keys()}", file=sys.stderr)
+        print(f"[START] Request authenticated: {request.user.is_authenticated}", file=sys.stderr)
+        print("="*80, file=sys.stderr)
+        sys.stderr.flush()
+        
         try:
             # Get file or S3 key
             uploaded_file = request.FILES.get('file')

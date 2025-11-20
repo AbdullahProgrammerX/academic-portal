@@ -16,11 +16,12 @@ export const useAuthStore = defineStore('auth', () => {
   // State
   const user = ref<User | null>(null)
   const accessToken = ref<string | null>(null)
+  const storedRefreshToken = ref<string | null>(null)  // Refresh token in localStorage (fallback)
   const loading = ref(false)
   const error = ref<string | null>(null)
   const initialized = ref(false)
 
-  // Sync access token to localStorage and global window object for axios interceptor
+  // Sync tokens to localStorage and global window object for axios interceptor
   watch(accessToken, (newToken) => {
     if (newToken) {
       localStorage.setItem('access_token', newToken)
@@ -28,6 +29,14 @@ export const useAuthStore = defineStore('auth', () => {
     } else {
       localStorage.removeItem('access_token')
       ;(window as any).__ACCESS_TOKEN__ = null
+    }
+  }, { immediate: true })
+
+  watch(storedRefreshToken, (newToken) => {
+    if (newToken) {
+      localStorage.setItem('refresh_token', newToken)
+    } else {
+      localStorage.removeItem('refresh_token')
     }
   }, { immediate: true })
 
@@ -47,6 +56,7 @@ export const useAuthStore = defineStore('auth', () => {
       const response = await authAPI.register(data)
       user.value = response.user
       accessToken.value = response.tokens.access
+      storedRefreshToken.value = response.tokens.refresh  // Store refresh token
       return response
     } catch (err: any) {
       error.value = err.response?.data?.error || 'Registration failed'
@@ -64,6 +74,7 @@ export const useAuthStore = defineStore('auth', () => {
       const response = await authAPI.login(credentials)
       user.value = response.user
       accessToken.value = response.tokens.access
+      storedRefreshToken.value = response.tokens.refresh  // Store refresh token
       return response
     } catch (err: any) {
       error.value = err.response?.data?.error || 'Login failed'
@@ -84,11 +95,12 @@ export const useAuthStore = defineStore('auth', () => {
     } finally {
       user.value = null
       accessToken.value = null
+      storedRefreshToken.value = null  // Clear refresh token
       loading.value = false
     }
   }
 
-  async function refreshToken() {
+  async function doRefreshToken() {
     try {
       const response = await authAPI.refresh()
       accessToken.value = response.access
@@ -155,6 +167,7 @@ export const useAuthStore = defineStore('auth', () => {
       const response = await authAPI.orcidCallback(code, state)
       user.value = response.user
       accessToken.value = response.tokens.access
+      storedRefreshToken.value = response.tokens.refresh  // Store refresh token
       return response
     } catch (err: any) {
       error.value = err.response?.data?.error || 'ORCID login failed'
@@ -176,10 +189,15 @@ export const useAuthStore = defineStore('auth', () => {
     
     initialized.value = true // Mark as initialized immediately to prevent multiple calls
     
-    // Try to load token from localStorage
-    const storedToken = localStorage.getItem('access_token')
-    if (storedToken) {
-      accessToken.value = storedToken
+    // Try to load tokens from localStorage
+    const storedAccessToken = localStorage.getItem('access_token')
+    const storedRefreshTokenValue = localStorage.getItem('refresh_token')
+    
+    if (storedAccessToken) {
+      accessToken.value = storedAccessToken
+    }
+    if (storedRefreshTokenValue) {
+      storedRefreshToken.value = storedRefreshTokenValue
     }
     
     // If we have a token, try to fetch current user
@@ -190,6 +208,7 @@ export const useAuthStore = defineStore('auth', () => {
         // Token is invalid, clear it
         user.value = null
         accessToken.value = null
+        storedRefreshToken.value = null
         console.log('[Auth] Token invalid, cleared')
       }
     } else {
@@ -202,6 +221,7 @@ export const useAuthStore = defineStore('auth', () => {
     // State
     user,
     accessToken,
+    storedRefreshToken,
     loading,
     error,
     initialized,
@@ -217,7 +237,7 @@ export const useAuthStore = defineStore('auth', () => {
     register,
     login,
     logout,
-    refreshToken,
+    refreshToken: doRefreshToken,
     fetchCurrentUser,
     updateProfile,
     changePassword,

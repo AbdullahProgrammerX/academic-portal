@@ -79,6 +79,7 @@ class RegisterView(generics.CreateAPIView):
                     secure=False,  # Set to True in production with HTTPS  
                     samesite='Lax',  # Lax works for localhost -> localhost
                     max_age=60 * 60 * 24 * 7,  # 7 days
+                    path='/',  # Available for all paths
                     domain=None  # Allow localhost and 127.0.0.1
                 )
                 
@@ -125,6 +126,7 @@ class LoginView(APIView):
             secure=False,  # Set to True in production with HTTPS
             samesite='Lax',  # Lax works for localhost -> localhost
             max_age=60 * 60 * 24 * 7,  # 7 days
+            path='/',  # Available for all paths
             domain=None  # Allow localhost and 127.0.0.1
         )
         
@@ -188,6 +190,7 @@ class RefreshTokenView(APIView):
                     secure=False,  # Set to True in production with HTTPS
                     samesite='Lax',  # Lax works for localhost -> localhost
                     max_age=60 * 60 * 24 * 7,  # 7 days
+                    path='/',  # Available for all paths
                     domain=None  # Allow localhost and 127.0.0.1
                 )
             
