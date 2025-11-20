@@ -92,15 +92,16 @@ router.beforeEach(async (to, from, next) => {
     }
 
     // Check if route requires verification
-    if (to.meta.requiresVerification && !authStore.hasVerifiedIdentity) {
-      console.log('[Router] Not verified, redirecting to dashboard')
-      // Not verified, redirect to dashboard with message
-      next({
-        path: '/dashboard',
-        query: { message: 'Please verify your email or ORCID to submit manuscripts' }
-      })
-      return
-    }
+    // TEMPORARILY DISABLED FOR TESTING
+    // if (to.meta.requiresVerification && !authStore.hasVerifiedIdentity) {
+    //   console.log('[Router] Not verified, redirecting to dashboard')
+    //   // Not verified, redirect to dashboard with message
+    //   next({
+    //     path: '/dashboard',
+    //     query: { message: 'Please verify your email or ORCID to submit manuscripts' }
+    //   })
+    //   return
+    // }
   }
 
   // Check if route requires guest (logged out)

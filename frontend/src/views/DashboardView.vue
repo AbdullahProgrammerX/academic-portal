@@ -107,21 +107,18 @@ function getCompletionColor(percentage: number): string {
         </p>
         
         <!-- Show verification warning if not verified -->
-        <div v-if="!authStore.hasVerifiedIdentity" 
+        <!-- TEMPORARILY DISABLED FOR TESTING -->
+        <!-- <div v-if="!authStore.hasVerifiedIdentity" 
              class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4 text-left">
           <p class="text-yellow-800 text-sm">
             <strong>⚠️ Verification Required:</strong> Please verify your email or connect your ORCID to submit manuscripts.
           </p>
-        </div>
+        </div> -->
         
         <button 
           @click="navigateToNewSubmission"
-          :disabled="!authStore.hasVerifiedIdentity"
-          :class="authStore.hasVerifiedIdentity 
-            ? 'bg-indigo-600 hover:bg-indigo-700' 
-            : 'bg-gray-400 cursor-not-allowed'"
-          class="text-white px-8 py-3 rounded-lg font-semibold text-lg transition-colors inline-flex items-center"
-          :aria-label="authStore.hasVerifiedIdentity ? 'Create new manuscript submission' : 'Verification required to submit'"
+          class="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3 rounded-lg font-semibold text-lg transition-colors inline-flex items-center"
+          aria-label="Create new manuscript submission"
         >
           <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
