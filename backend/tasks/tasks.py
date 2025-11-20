@@ -93,9 +93,9 @@ def extract_metadata_task(self, submission_id: str, file_id: str = None, s3_key:
                         Authorship.objects.create(
                             submission=submission,
                             author_order=order,
-                            author=user,
-                            external_author_name=author_data.get('name') if not user else None,
-                            external_author_email=author_data.get('email') if not user else None,
+                            user=user,  # Changed from 'author' to 'user'
+                            full_name=author_data.get('name', ''),
+                            email=author_data.get('email', ''),
                             affiliation=author_data.get('affiliation', ''),
                             is_corresponding=order == 1  # First author as corresponding
                         )
