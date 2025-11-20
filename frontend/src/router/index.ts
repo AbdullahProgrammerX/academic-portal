@@ -71,16 +71,17 @@ router.beforeEach(async (to, from, next) => {
     try {
       console.log('[Router] Initializing auth store...')
       await authStore.initialize()
-      console.log('[Router] Auth initialized:', authStore.isAuthenticated)
+      console.log('[Router] Auth initialized. User:', authStore.user?.email, 'Token:', !!authStore.accessToken)
     } catch (err) {
       console.log('[Router] Auth initialization failed:', err)
-      // User not authenticated, continue with guard logic
+      // User not authenticated, mark as initialized anyway
+      authStore.initialized = true
     }
   }
 
   // Check if route requires authentication
   if (to.meta.requiresAuth) {
-    console.log('[Router] Route requires auth:', to.path)
+    console.log('[Router] Route requires auth:', to.path, '| isAuthenticated:', authStore.isAuthenticated)
     if (!authStore.isAuthenticated) {
       console.log('[Router] Not authenticated, redirecting to login')
       // Not authenticated, redirect to login
@@ -112,7 +113,7 @@ router.beforeEach(async (to, from, next) => {
   }
 
   // Allow navigation
-  console.log('[Router] Navigation allowed')
+  console.log('[Router] Navigation allowed to:', to.path)
   next()
 })
 

@@ -76,8 +76,8 @@ class RegisterView(generics.CreateAPIView):
                     key='refresh_token',
                     value=str(refresh),
                     httponly=True,
-                    secure=False,  # Set to True in production with HTTPS
-                    samesite='Lax',
+                    secure=False,  # Set to True in production with HTTPS  
+                    samesite='Lax',  # Lax works for localhost -> localhost
                     max_age=60 * 60 * 24 * 7,  # 7 days
                     domain=None  # Allow localhost and 127.0.0.1
                 )
@@ -123,7 +123,7 @@ class LoginView(APIView):
             value=str(refresh),
             httponly=True,
             secure=False,  # Set to True in production with HTTPS
-            samesite='Lax',
+            samesite='Lax',  # Lax works for localhost -> localhost
             max_age=60 * 60 * 24 * 7,  # 7 days
             domain=None  # Allow localhost and 127.0.0.1
         )
@@ -186,7 +186,7 @@ class RefreshTokenView(APIView):
                     value=str(refresh),
                     httponly=True,
                     secure=False,  # Set to True in production with HTTPS
-                    samesite='Lax',
+                    samesite='Lax',  # Lax works for localhost -> localhost
                     max_age=60 * 60 * 24 * 7,  # 7 days
                     domain=None  # Allow localhost and 127.0.0.1
                 )

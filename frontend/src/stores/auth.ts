@@ -20,11 +20,13 @@ export const useAuthStore = defineStore('auth', () => {
   const error = ref<string | null>(null)
   const initialized = ref(false)
 
-  // Sync access token to global window object for axios interceptor
+  // Sync access token to localStorage and global window object for axios interceptor
   watch(accessToken, (newToken) => {
     if (newToken) {
+      localStorage.setItem('access_token', newToken)
       ;(window as any).__ACCESS_TOKEN__ = newToken
     } else {
+      localStorage.removeItem('access_token')
       ;(window as any).__ACCESS_TOKEN__ = null
     }
   }, { immediate: true })
@@ -174,13 +176,24 @@ export const useAuthStore = defineStore('auth', () => {
     
     initialized.value = true // Mark as initialized immediately to prevent multiple calls
     
-    try {
-      await fetchCurrentUser()
-    } catch (err) {
-      // No valid session, user needs to login
-      // This is expected on first visit
-      user.value = null
-      accessToken.value = null
+    // Try to load token from localStorage
+    const storedToken = localStorage.getItem('access_token')
+    if (storedToken) {
+      accessToken.value = storedToken
+    }
+    
+    // If we have a token, try to fetch current user
+    if (accessToken.value) {
+      try {
+        await fetchCurrentUser()
+      } catch (err) {
+        // Token is invalid, clear it
+        user.value = null
+        accessToken.value = null
+        console.log('[Auth] Token invalid, cleared')
+      }
+    } else {
+      // No token, user needs to login
       console.log('[Auth] No active session')
     }
   }

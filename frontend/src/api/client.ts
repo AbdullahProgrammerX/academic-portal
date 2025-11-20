@@ -39,10 +39,8 @@ const processQueue = (error: any, token: string | null = null) => {
 // Request interceptor - Add auth token
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    // Get access token from auth store
-    // Note: We can't import useAuthStore here due to circular dependency
-    // The store will set the token via a separate mechanism
-    const accessToken = (window as any).__ACCESS_TOKEN__
+    // Get access token from window (set by auth store) or localStorage
+    const accessToken = (window as any).__ACCESS_TOKEN__ || localStorage.getItem('access_token')
     
     if (accessToken) {
       config.headers.Authorization = `Bearer ${accessToken}`
@@ -89,7 +87,8 @@ apiClient.interceptors.response.use(
 
       const newAccessToken = response.data.access
 
-      // Update global access token
+      // Update global access token and localStorage
+      localStorage.setItem('access_token', newAccessToken)
       ;(window as any).__ACCESS_TOKEN__ = newAccessToken
 
       // Notify queued requests
@@ -101,6 +100,7 @@ apiClient.interceptors.response.use(
     } catch (refreshError) {
       // Refresh failed, clear auth state
       processQueue(refreshError, null)
+      localStorage.removeItem('access_token')
       ;(window as any).__ACCESS_TOKEN__ = null
 
       // Don't redirect here - let router guard handle it

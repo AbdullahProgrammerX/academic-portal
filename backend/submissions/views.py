@@ -61,7 +61,7 @@ class SubmissionViewSet(viewsets.ModelViewSet):
         try:
             # Get file or S3 key
             uploaded_file = request.FILES.get('file')
-            s3_key = request.data.get('s3_key')
+            s3_key = None  # S3 not used in current implementation
             
             if not uploaded_file and not s3_key:
                 return Response(
@@ -74,7 +74,7 @@ class SubmissionViewSet(viewsets.ModelViewSet):
                 submitting_author=request.user,
                 status='DRAFT',
                 title='Extracting...',  # Temporary
-                manuscript_type=request.data.get('manuscript_type', 'RESEARCH_ARTICLE')
+                abstract=''  # Temporary
             )
             
             # Handle file upload
@@ -104,14 +104,24 @@ class SubmissionViewSet(viewsets.ModelViewSet):
                     for chunk in uploaded_file.chunks():
                         destination.write(chunk)
                 
+                # Create revision first
+                from submissions.models import Revision
+                revision = Revision.objects.create(
+                    submission=submission,
+                    revision_number=1,
+                    created_by=request.user
+                )
+                
                 # Create ManuscriptFile record
+                relative_path = os.path.relpath(temp_file_path, settings.MEDIA_ROOT)
                 manuscript_file = ManuscriptFile.objects.create(
                     submission=submission,
-                    revision=None,  # Will be set after first revision
+                    revision=revision,
                     file_type='MANUSCRIPT',
-                    file_path=temp_file_path,  # Local path for now
+                    file_path=relative_path,  # Relative to MEDIA_ROOT
+                    original_filename=uploaded_file.name,
                     file_size=uploaded_file.size,
-                    is_current_version=True
+                    uploaded_by=request.user
                 )
             
             # Trigger Celery task for metadata extraction
