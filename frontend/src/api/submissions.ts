@@ -66,7 +66,7 @@ export const submissionsApi = {
     formData.append('file', file)
     formData.append('manuscript_type', manuscriptType)
     
-    const { data } = await apiClient.post<ExtractionResult>('/submissions/submissions/start/', formData, {
+    const { data } = await apiClient.post<ExtractionResult>('/submissions/start/', formData, {
       headers: {
         'Content-Type': 'multipart/form-data'
       }
@@ -78,7 +78,7 @@ export const submissionsApi = {
    * Check status of metadata extraction task
    */
   async checkExtractionStatus(taskId: string): Promise<ExtractionStatus> {
-    const { data } = await apiClient.get<ExtractionStatus>(`/submissions/submissions/extraction-status/${taskId}/`)
+    const { data } = await apiClient.get<ExtractionStatus>(`/submissions/extraction-status/${taskId}/`)
     return data
   },
 
@@ -126,7 +126,7 @@ export const submissionsApi = {
     manuscript_type?: string
     page?: number 
   }): Promise<PaginatedResponse<Submission>> {
-    const { data } = await apiClient.get<PaginatedResponse<Submission>>('/submissions/submissions/', { params })
+    const { data } = await apiClient.get<PaginatedResponse<Submission>>('/submissions/', { params })
     return data
   },
 
@@ -134,7 +134,7 @@ export const submissionsApi = {
    * Get single submission detail
    */
   async getSubmission(id: string): Promise<Submission> {
-    const { data } = await apiClient.get<Submission>(`/submissions/submissions/${id}/`)
+    const { data } = await apiClient.get<Submission>(`/submissions/${id}/`)
     return data
   },
 
@@ -142,7 +142,7 @@ export const submissionsApi = {
    * Update submission (only DRAFT)
    */
   async updateSubmission(id: string, submissionData: Partial<Submission>): Promise<Submission> {
-    const { data } = await apiClient.patch<Submission>(`/submissions/submissions/${id}/`, submissionData)
+    const { data } = await apiClient.patch<Submission>(`/submissions/${id}/`, submissionData)
     return data
   },
 
@@ -150,7 +150,7 @@ export const submissionsApi = {
    * Submit a DRAFT submission (change status to SUBMITTED)
    */
   async submitDraft(id: string): Promise<Submission> {
-    const { data } = await apiClient.post<Submission>(`/submissions/submissions/${id}/submit/`)
+    const { data } = await apiClient.post<Submission>(`/submissions/${id}/submit/`)
     return data
   },
 
@@ -158,7 +158,7 @@ export const submissionsApi = {
    * Delete submission (only DRAFT)
    */
   async deleteSubmission(id: string): Promise<void> {
-    await apiClient.delete(`/submissions/submissions/${id}/`)
+    await apiClient.delete(`/submissions/${id}/`)
   },
 
   /**
